@@ -1,21 +1,29 @@
 import { Module } from '@nestjs/common';
-import { createObserveModule } from '@nestjs/observe';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { join } from 'node:path';
+
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
-
-export const { ObserveModule, ObserveInstrument } = createObserveModule();
+import { OrdersController } from './orders.controller.js';
 
 @Module({
   imports: [
-    // Distributed tracing, auto-correlated logs, request/job metrics, error
-    // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
-    ObserveModule.forRoot({
-      appKey: 'YOUR_APP_KEY',
-      appSecret: 'YOUR_APP_SECRET',
-      serviceId: 'api-gateway',
-    }),
+    ClientsModule.register([
+      {
+        name: 'ORDER_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'commerce',
+          protoPath: join(
+            process.cwd(),
+            '../../libs/contracts/proto/commerce.proto',
+          ),
+          url: '127.0.0.1:50051',
+        },
+      },
+    ]),
   ],
-  controllers: [AppController],
+  controllers: [AppController, OrdersController],
   providers: [AppService],
 })
 export class AppModule {}

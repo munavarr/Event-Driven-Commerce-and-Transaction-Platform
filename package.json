@@ -1,10 +1,11 @@
 {
-  "name": "commerce-platform",
+ "name": "commerce-platform",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
+    "lint": "pnpm -r --if-present lint"
   },
   "keywords": [],
   "author": "",
