@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { type Knex } from 'knex';
-import { KNEX } from './database.module.js';
+import { KNEX } from './database.constants.js';
 
 @Injectable()
 export class DatabaseService {

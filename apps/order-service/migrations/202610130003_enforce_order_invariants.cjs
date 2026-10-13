@@ -1,4 +1,17 @@
 exports.up = async function (knex) {
+  // This trigger is also used by the inventory table below. Define it here as
+  // well as in the initial schema migration so this migration remains safe on
+  // databases where the original helper was removed during local development.
+  await knex.raw(`
+    CREATE OR REPLACE FUNCTION set_updated_at()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      NEW.updated_at = NOW();
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+  `);
+
   await knex.raw(`
     CREATE FUNCTION enforce_order_status_transition()
     RETURNS TRIGGER AS $$

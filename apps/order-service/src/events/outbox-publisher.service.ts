@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nest
 import { ConfigService } from '@nestjs/config';
 import type { Producer } from 'kafkajs';
 import type { Knex } from 'knex';
-import { KNEX } from '../database/database.module.js';
+import { KNEX } from '../database/database.constants.js';
 import { createKafka, kafkaEnabled } from './kafka-topology.service.js';
 
 interface OutboxEvent {

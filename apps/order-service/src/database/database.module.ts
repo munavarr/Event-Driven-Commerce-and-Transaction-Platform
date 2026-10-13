@@ -8,9 +8,10 @@ import {
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import knex, { Knex } from 'knex';
+import { KNEX } from './database.constants.js';
 import { DatabaseService } from './database.service.js';
 
-export const KNEX = 'KNEX';
+export { KNEX } from './database.constants.js';
 
 function getPoolSize(
   config: ConfigService,

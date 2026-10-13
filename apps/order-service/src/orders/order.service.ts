@@ -3,7 +3,7 @@ import { Inject, Injectable, Optional } from '@nestjs/common';
 import { status } from '@grpc/grpc-js';
 import { RpcException } from '@nestjs/microservices';
 import { type Knex } from 'knex';
-import { KNEX } from '../database/database.module.js';
+import { KNEX } from '../database/database.constants.js';
 import { OrderCacheService } from '../cache/order-cache.service.js';
 import {
   createOrderCreatedEvent,
