@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module.js';
 import { KafkaTopologyService } from './kafka-topology.service.js';
 import { OutboxPublisherService } from './outbox-publisher.service.js';
+import { CheckoutSagaConsumer } from './checkout-saga.consumer.js';
 import {
   OrderCreatedAnalyticsConsumer,
   OrderCreatedNotificationConsumer,
@@ -12,6 +13,7 @@ import {
   providers: [
     KafkaTopologyService,
     OutboxPublisherService,
+    CheckoutSagaConsumer,
     OrderCreatedNotificationConsumer,
     OrderCreatedAnalyticsConsumer,
   ],

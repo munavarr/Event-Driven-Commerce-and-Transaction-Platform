@@ -75,6 +75,34 @@ services:
       timeout: 3s
       retries: 10
 
+  inventory-postgres:
+    image: postgres:17
+    environment: { POSTGRES_DB: commerce_inventory, POSTGRES_USER: commerce_app, POSTGRES_PASSWORD: local_dev_password }
+    ports: ["5435:5432"]
+    volumes: [inventory_data:/var/lib/postgresql/data]
+
+  payment-postgres:
+    image: postgres:17
+    environment: { POSTGRES_DB: commerce_payments, POSTGRES_USER: commerce_app, POSTGRES_PASSWORD: local_dev_password }
+    ports: ["5436:5432"]
+    volumes: [payment_data:/var/lib/postgresql/data]
+
+  fulfillment-postgres:
+    image: postgres:17
+    environment: { POSTGRES_DB: commerce_fulfillment, POSTGRES_USER: commerce_app, POSTGRES_PASSWORD: local_dev_password }
+    ports: ["5437:5432"]
+    volumes: [fulfillment_data:/var/lib/postgresql/data]
+
+  notification-postgres:
+    image: postgres:17
+    environment: { POSTGRES_DB: commerce_notifications, POSTGRES_USER: commerce_app, POSTGRES_PASSWORD: local_dev_password }
+    ports: ["5438:5432"]
+    volumes: [notification_data:/var/lib/postgresql/data]
+
 volumes:
   postgres_data:
   postgres_test_data:
+  inventory_data:
+  payment_data:
+  fulfillment_data:
+  notification_data:

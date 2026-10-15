@@ -5,7 +5,6 @@ import {
   Inject,
   OnModuleInit,
   Param,
-  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -58,11 +57,6 @@ interface OrderGrpcService {
   createOrder(
     data: CreateOrderRequest,
   ): Observable<{ order: Order; replayed: boolean }>;
-  transitionOrderStatus(data: {
-    orderId: string;
-    expectedStatus: string;
-    nextStatus: string;
-  }): Observable<Order>;
 }
 
 interface OrderSummary {
@@ -118,13 +112,4 @@ export class OrdersController implements OnModuleInit {
     return firstValueFrom(this.orderService.createOrder(body));
   }
 
-  @Patch(':id/status')
-  async transitionStatus(
-    @Param('id') id: string,
-    @Body() body: { expectedStatus: string; nextStatus: string },
-  ) {
-    return firstValueFrom(
-      this.orderService.transitionOrderStatus({ orderId: id, ...body }),
-    );
-  }
 }

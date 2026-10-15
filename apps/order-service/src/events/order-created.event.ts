@@ -7,6 +7,7 @@ export const ORDER_CREATED_SCHEMA_VERSION = 1;
 
 export interface OrderCreatedEvent {
   eventId: string;
+  orderId: string;
   eventType: typeof ORDER_CREATED_EVENT_TYPE;
   schemaVersion: typeof ORDER_CREATED_SCHEMA_VERSION;
   occurredAt: string;
@@ -39,6 +40,7 @@ export function createOrderCreatedEvent(
 ): OrderCreatedEvent {
   return {
     eventId,
+    orderId: order.id,
     eventType: ORDER_CREATED_EVENT_TYPE,
     schemaVersion: ORDER_CREATED_SCHEMA_VERSION,
     occurredAt,
@@ -59,10 +61,12 @@ export function parseOrderCreatedEvent(value: unknown): OrderCreatedEvent {
     value === null ||
     !('eventId' in value) ||
     !('eventType' in value) ||
+    !('orderId' in value) ||
     !('schemaVersion' in value) ||
     !('occurredAt' in value) ||
     !('order' in value) ||
     typeof value.eventId !== 'string' ||
+    typeof value.orderId !== 'string' ||
     value.eventType !== ORDER_CREATED_EVENT_TYPE ||
     value.schemaVersion !== ORDER_CREATED_SCHEMA_VERSION ||
     typeof value.occurredAt !== 'string' ||

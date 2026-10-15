@@ -27,6 +27,7 @@ export class KafkaTopologyService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(KafkaTopologyService.name);
   private readonly kafka: Kafka;
   private admin?: ReturnType<Kafka['admin']>;
+  private retryTimer?: NodeJS.Timeout;
 
   constructor(private readonly config: ConfigService) {
     this.kafka = createKafka(config, 'order-service-topology');
@@ -35,6 +36,12 @@ export class KafkaTopologyService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit(): Promise<void> {
     if (!kafkaEnabled(this.config)) return;
     this.admin = this.kafka.admin();
+    await this.provision();
+    this.retryTimer = setInterval(() => void this.provision(), 10_000);
+  }
+
+  private async provision(): Promise<void> {
+    if (!this.admin) return;
     try {
       await this.admin.connect();
       await this.admin.createTopics({
@@ -46,6 +53,11 @@ export class KafkaTopologyService implements OnModuleInit, OnModuleDestroy {
             numPartitions: 3,
             replicationFactor: 1,
           },
+          ...['commerce.inventory.reserved.v1', 'commerce.inventory.rejected.v1',
+            'commerce.payment.authorized.v1', 'commerce.payment.failed.v1',
+            'commerce.fulfillment.created.v1', 'commerce.fulfillment.failed.v1',
+            'commerce.order.status-changed.v1']
+            .map((topic) => ({ topic, numPartitions: 3, replicationFactor: 1 })),
         ],
       });
     } catch (error) {
@@ -56,6 +68,7 @@ export class KafkaTopologyService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
+    if (this.retryTimer) clearInterval(this.retryTimer);
     await this.admin?.disconnect();
   }
 

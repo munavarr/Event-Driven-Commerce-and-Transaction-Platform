@@ -139,8 +139,6 @@ export class OrderService {
           request_hash: request.requestHash,
         });
 
-        await this.reserveInventory(request.items, trx);
-
         await trx('order_items').insert(
           request.items.map((item) => ({
             id: randomUUID(),
@@ -271,7 +269,9 @@ export class OrderService {
     nextStatus: string,
   ): Promise<Order> {
     const allowed = new Map<string, ReadonlySet<string>>([
-      ['PENDING', new Set(['CONFIRMED', 'CANCELLED', 'PAYMENT_FAILED'])],
+      ['PENDING', new Set(['INVENTORY_RESERVED', 'CANCELLED'])],
+      ['INVENTORY_RESERVED', new Set(['PAYMENT_AUTHORIZED', 'PAYMENT_FAILED', 'CANCELLED'])],
+      ['PAYMENT_AUTHORIZED', new Set(['CONFIRMED', 'CANCELLED'])],
       ['PAYMENT_FAILED', new Set(['CANCELLED'])],
     ]);
     if (!UUID_PATTERN.test(id)) {
@@ -307,6 +307,53 @@ export class OrderService {
     });
     await this.invalidateOrder(order);
     return order;
+  }
+
+  /** Applies a downstream saga result exactly once.  This is deliberately not a
+   * gRPC method: only Kafka consumers are allowed to advance checkout state. */
+  async applySagaResult(
+    eventId: string,
+    orderId: string,
+    expectedStatus: string,
+    nextStatus: string,
+  ): Promise<void> {
+    if (!UUID_PATTERN.test(eventId) || !UUID_PATTERN.test(orderId)) {
+      throw this.rpcError(status.INVALID_ARGUMENT, 'saga event identifiers must be UUIDs');
+    }
+    const order = await this.db.transaction(async (trx) => {
+      const inserted = await trx('processed_events')
+        .insert({ event_id: eventId, event_type: 'checkout.saga.result' })
+        .onConflict('event_id')
+        .ignore()
+        .returning('event_id');
+      if (inserted.length === 0) return undefined;
+
+      const current = await trx<StoredOrder>('orders').where({ id: orderId }).forUpdate().first();
+      if (!current) throw this.rpcError(status.NOT_FOUND, 'order not found');
+      // A duplicate or stale result is harmless; a later state must never be
+      // rolled back by an event that arrived out of order.
+      if (current.status !== expectedStatus) return undefined;
+      await trx('orders').where({ id: orderId }).update({ status: nextStatus });
+      const changed = await this.findById(orderId, trx);
+      const statusEventId = randomUUID();
+      await trx('outbox_events').insert({
+        id: statusEventId,
+        topic: 'commerce.order.status-changed.v1',
+        message_key: orderId,
+        payload: JSON.stringify({
+          eventId: statusEventId,
+          eventType: 'commerce.order.status-changed',
+          schemaVersion: 1,
+          occurredAt: new Date().toISOString(),
+          orderId,
+          previousStatus: expectedStatus,
+          status: nextStatus,
+        }),
+        headers: JSON.stringify({ 'content-type': 'application/json' }),
+      });
+      return changed;
+    });
+    if (order) await this.invalidateOrder(order);
   }
 
   private async findStoredByIdempotencyKey(
@@ -362,34 +409,9 @@ export class OrderService {
   }
 
   private isOrderStatus(value: string): boolean {
-    return ['PENDING', 'CONFIRMED', 'CANCELLED', 'PAYMENT_FAILED'].includes(
+    return ['PENDING', 'INVENTORY_RESERVED', 'PAYMENT_AUTHORIZED', 'CONFIRMED', 'CANCELLED', 'PAYMENT_FAILED'].includes(
       value,
     );
-  }
-
-  private async reserveInventory(
-    items: ValidatedItem[],
-    trx: Knex.Transaction,
-  ): Promise<void> {
-    // Every checkout takes inventory row locks in the same order. The conditional
-    // UPDATE is the availability check and decrement in one statement, so a stale
-    // read can never overwrite another reservation.
-    for (const item of [...items].sort((left, right) =>
-      left.productId.localeCompare(right.productId),
-    )) {
-      const reserved = await trx('inventory')
-        .where({ product_id: item.productId })
-        .where('available_quantity', '>=', item.quantity)
-        .decrement('available_quantity', item.quantity)
-        .returning('product_id');
-
-      if (reserved.length !== 1) {
-        throw this.rpcError(
-          status.RESOURCE_EXHAUSTED,
-          `insufficient inventory for product ${item.productId}`,
-        );
-      }
-    }
   }
 
   private async findById(

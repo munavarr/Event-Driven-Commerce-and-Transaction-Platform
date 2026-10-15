@@ -267,8 +267,9 @@ describe('OrderService', () => {
     expect(result.order.totalAmountMinor).toBe('2998');
     expect(database.orders).toHaveLength(1);
     expect(database.items).toHaveLength(1);
+    // Stock is now reserved by Inventory Service after the order-created event.
     expect(database.inventory).toEqual([
-      { product_id: 'keyboard', available_quantity: 8 },
+      { product_id: 'keyboard', available_quantity: 10 },
     ]);
     expect(database.items[0]?.line_total_minor).toBe('2998');
     expect(database.outbox).toHaveLength(1);
@@ -292,15 +293,15 @@ describe('OrderService', () => {
     ]);
   });
 
-  it('rejects an order when the atomic inventory decrement finds insufficient stock', async () => {
+  it('accepts checkout when stock is unavailable; Inventory Service resolves it asynchronously', async () => {
     const database = createDatabase({ inventory: { keyboard: 1 } });
     const service = new OrderService(database.db);
 
-    await expect(service.create(validRequest)).rejects.toBeInstanceOf(
-      RpcException,
-    );
-    expect(database.orders).toEqual([]);
-    expect(database.items).toEqual([]);
+    await expect(service.create(validRequest)).resolves.toMatchObject({
+      order: { status: 'PENDING' }, replayed: false,
+    });
+    expect(database.orders).toHaveLength(1);
+    expect(database.items).toHaveLength(1);
     expect(database.inventory).toEqual([
       { product_id: 'keyboard', available_quantity: 1 },
     ]);
@@ -366,10 +367,10 @@ describe('OrderService', () => {
     const changed = await service.transitionStatus(
       created.order.id,
       'PENDING',
-      'CONFIRMED',
+      'INVENTORY_RESERVED',
     );
 
-    expect(changed.status).toBe('CONFIRMED');
+    expect(changed.status).toBe('INVENTORY_RESERVED');
     await expect(
       service.transitionStatus(created.order.id, 'PENDING', 'CANCELLED'),
     ).rejects.toBeInstanceOf(RpcException);

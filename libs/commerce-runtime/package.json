@@ -1,0 +1,12 @@
+{
+  "name": "@commerce/runtime",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.mjs",
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "kafkajs": "^2.2.4",
+    "knex": "^3.3.0",
+    "pg": "^8.23.1"
+  }
+}

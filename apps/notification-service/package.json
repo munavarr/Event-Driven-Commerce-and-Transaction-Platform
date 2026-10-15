@@ -1,0 +1,1 @@
+{"name":"notification-service","private":true,"type":"module","scripts":{"start":"node src/main.mjs"},"dependencies":{"@commerce/runtime":"workspace:*"}}

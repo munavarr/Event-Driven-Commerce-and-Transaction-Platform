@@ -102,12 +102,12 @@ duplicate. Downstream handlers must persist `eventId` as their idempotency key.
 Set `KAFKA_ENABLED=false` to run database-only tests or local development without a
 broker. `KAFKA_BROKERS` accepts a comma-separated broker list.
 
-The inventory migration creates an `inventory` table owned by this service during the
-current local-development phase. Seed each sellable `product_id` with its available
-quantity before accepting orders. Order creation reserves each requested product with
-one conditional `UPDATE` (`available_quantity >= requested_quantity`) inside the same
-transaction as the order write. This prevents negative stock and lost updates; a stock
-shortage returns `RESOURCE_EXHAUSTED` and rolls back the entire order.
+Inventory is not owned by Order Service. `CreateOrder` commits a `PENDING` order and
+emits `commerce.order.created.v1`; Inventory Service reserves stock in its own local
+transaction and returns a reservation result. The checkout saga is documented in
+[`../../ARCHITECTURE.md`](../../ARCHITECTURE.md). This deliberate asynchronous boundary
+means callers must poll the order (or subscribe to an order-status notification) rather
+than treating a successful create response as a completed checkout.
 
 PostgreSQL is also the final integrity boundary. Its constraints reject negative stock,
 invalid currencies and quantities, duplicate products in an order, and invalid order

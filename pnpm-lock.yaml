@@ -276,6 +276,24 @@ importers:
         specifier: ^4.1.2
         version: 4.1.11(@types/node@24.19.2)(@vitest/coverage-v8@4.1.11)(vite@8.3.4(@types/node@24.19.2))
 
+  apps/fulfillment-service:
+    dependencies:
+      '@commerce/runtime':
+        specifier: workspace:*
+        version: link:../../libs/commerce-runtime
+
+  apps/inventory-service:
+    dependencies:
+      '@commerce/runtime':
+        specifier: workspace:*
+        version: link:../../libs/commerce-runtime
+
+  apps/notification-service:
+    dependencies:
+      '@commerce/runtime':
+        specifier: workspace:*
+        version: link:../../libs/commerce-runtime
+
   apps/order-service:
     dependencies:
       '@grpc/grpc-js':
@@ -375,6 +393,27 @@ importers:
       vitest:
         specifier: ^4.1.2
         version: 4.1.11(@types/node@24.19.2)(@vitest/coverage-v8@4.1.11)(vite@8.3.4(@types/node@24.19.2))
+
+  apps/payment-service:
+    dependencies:
+      '@commerce/runtime':
+        specifier: workspace:*
+        version: link:../../libs/commerce-runtime
+
+  libs/commerce-runtime:
+    dependencies:
+      dotenv:
+        specifier: ^18.0.7
+        version: 18.0.7
+      kafkajs:
+        specifier: ^2.2.4
+        version: 2.2.4
+      knex:
+        specifier: ^3.3.0
+        version: 3.3.0(pg@8.23.1)(supports-color@7.2.0)
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
 
 packages:
 

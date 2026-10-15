@@ -19,14 +19,14 @@ describe('OrderCreated event contract', () => {
     expect(parseOrderCreatedEvent(event)).toEqual(event);
     expect(event).toMatchObject({
       eventType: 'commerce.order.created', schemaVersion: 1,
-      order: { totalAmountMinor: '2998' },
+      orderId: 'order-1', order: { totalAmountMinor: '2998' },
     });
   });
 
   it('rejects a different event type or schema version', () => {
     expect(() => parseOrderCreatedEvent({
       eventId: 'event-1', eventType: 'commerce.order.created', schemaVersion: 2,
-      occurredAt: '2026-10-13T00:00:00.000Z', order: { id: 'order-1' },
+      occurredAt: '2026-10-13T00:00:00.000Z', orderId: 'order-1', order: { id: 'order-1' },
     })).toThrow('invalid commerce.order.created.v1 event');
   });
 });

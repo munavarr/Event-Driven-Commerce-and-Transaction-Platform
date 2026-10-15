@@ -39,20 +39,6 @@ export class OrderController {
     return { order: this.toGrpcOrder(result.order), replayed: result.replayed };
   }
 
-  @GrpcMethod('OrderService', 'TransitionOrderStatus')
-  async transitionOrderStatus(data: {
-    orderId: string;
-    expectedStatus: string;
-    nextStatus: string;
-  }) {
-    const order = await this.orderService.transitionStatus(
-      data.orderId,
-      data.expectedStatus,
-      data.nextStatus,
-    );
-    return this.toGrpcOrder(order);
-  }
-
   private toGrpcOrder(order: Awaited<ReturnType<OrderService['getById']>>) {
     return {
       orderId: order.id,
